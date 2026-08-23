@@ -1,0 +1,47 @@
+[package]
+name = "xiao-esp32c3-blinky"
+version = "0.1.0"
+authors = ["Mariusz Jurgielewicz <mordor@mail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+esp-backtrace = { version = "0.18.1", features = [
+    "esp32c3",
+    "panic-handler",
+    "println",
+] }
+# Pinned to =1.0.0 deliberately. esp-hal 1.1.x changes the image layout in a way
+# esp-bootloader-esp-idf 0.4.0 does not match, and espflash then rejects the binary
+# with "ESP-IDF App Descriptor missing" even though esp_app_desc!() is present.
+esp-hal = { version = "=1.0.0", features = ["esp32c3", "unstable"] }
+esp-println = { version = "0.16.1", default-features = false, features = ["esp32c3", "jtag-serial", "colors", "critical-section"] }
+esp-bootloader-esp-idf = { version = "0.4.0", features = ["esp32c3"] }
+nb = "1.1"
+
+[dev-dependencies]
+embedded-graphics = "0.8.1"
+embedded-hal = "1.0"
+embedded-hal-bus = "0.3"
+epdsi = "0.1.2"
+tinybmp = "0.6"
+format_no_std = "1.2.0"
+
+[profile.dev]
+# Rust debug is too slow.
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
+debug = 2
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 's'
+overflow-checks = false
+
+# Uncomment to build against a local epdsi checkout — useful for testing driver fixes
+# that are not published yet. Remove before pushing.
+#[patch.crates-io]
+#epdsi = { path = "../epdsi" }
