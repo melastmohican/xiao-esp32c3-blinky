@@ -16,7 +16,8 @@ in the driver software, so these examples target the C3.
 
 - **Board:** Seeed Studio XIAO ESP32-C3 (`riscv32imc-unknown-none-elf`)
 - **Carrier:** ePaper Driver Board for XIAO, 24-pin FPC
-- **Display:** Good Display GDEQ0426T82, 4.26" monochrome, 800x480
+- **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480),
+  GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250)
 
 ### Pin mapping
 
@@ -67,12 +68,29 @@ Upgrade both together or neither.
 # Serial heartbeat, confirms toolchain and flashing work
 cargo run --release
 
-# Fill the panel black, then white — the simplest end-to-end check
-cargo run --release --example epd_diag4
+# Panel demos
+cargo run --release --example ssd1677_gdeq0426t82_epd   # 4.26" mono, differential refresh
+cargo run --release --example ssd1680_gdem0213b74_epd   # 2.13" mono, banded partial refresh
+cargo run --release --example jd79661_zjy122250_epd     # 2.13" quad-colour
 
-# Full demo: logos, differential refresh, cleanup pass
-cargo run --release --example ssd1677_gdeq0426t82_epd
+# Diagnostics, for bringing up a new panel
+cargo run --release --example epd_diag4        # 4.26": fill black, then white
+cargo run --release --example epd_diag_213     # 2.13": fill black/white, then edge stripes
+cargo run --release --example epd_diag_partial # 2.13": full vs partial vs banded, timed
 ```
+
+### If a panel misbehaves
+
+**Power-cycle the board and let the run finish uninterrupted before drawing any
+conclusions.** E-paper retains whatever was last written, and a run cut short mid-write
+leaves the panel in a state that makes the *next* run look broken — shifted content,
+refreshes that return instantly, or refreshes that appear to hang. Several apparent
+driver bugs during bring-up here turned out to be exactly that. The diagnostics above
+exist to establish a clean baseline: `epd_diag_213` proves the data path and geometry,
+`epd_diag_partial` times full against partial refresh.
+
+Reference timings for the 4.26" and 2.13" mono panels: full refresh ≈3.9 s, partial
+refresh ≈1.0 s, and moving a 4,000-byte frame over SPI at 4 MHz ≈8 ms.
 
 The XIAO ESP32-C3 has **no user-controllable onboard LED** (unlike the C6's GPIO15), so
 `src/main.rs` prints a counter over USB serial and toggles D6 / GPIO6, where an external
