@@ -17,7 +17,8 @@ in the driver software, so these examples target the C3.
 - **Board:** Seeed Studio XIAO ESP32-C3 (`riscv32imc-unknown-none-elf`)
 - **Carrier:** ePaper Driver Board for XIAO, 24-pin FPC
 - **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480),
-  GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250)
+  GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250),
+  GDEM0154Z90 (1.54" tri-colour, 200x200)
 
 ### Pin mapping
 
@@ -72,12 +73,16 @@ cargo run --release
 cargo run --release --example ssd1677_gdeq0426t82_epd   # 4.26" mono, differential refresh
 cargo run --release --example ssd1680_gdem0213b74_epd   # 2.13" mono, banded partial refresh
 cargo run --release --example jd79661_zjy122250_epd     # 2.13" quad-colour
+cargo run --release --example ssd1681_gdem0154z90_epd   # 1.54" tri-colour (~90 s, do not interrupt)
 
 # Diagnostics, for bringing up a new panel
 cargo run --release --example epd_diag4        # 4.26": fill black, then white
 cargo run --release --example epd_diag_213     # 2.13": fill black/white, then edge stripes
 cargo run --release --example epd_diag_partial # 2.13": full vs partial vs banded, timed
 ```
+
+See **[BRINGUP.md](BRINGUP.md)** for reference timings, diagnostics, and the hardware
+findings behind these examples.
 
 ### If a panel misbehaves
 
