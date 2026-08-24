@@ -35,6 +35,7 @@ panel state before suspecting code.
 | GDEM0213B74 2.13" mono | SSD1680 | ~3891 ms | ~1017 ms | banded partial, fast LUT |
 | ZJY122250 2.13" quad | JD79661 | several s | n/a | colour: no fast waveform |
 | GDEM0154Z90 1.54" tri | SSD1681 | **~14 s** | **~14 s** | see below |
+| GDEY037T03 3.7" mono | UC8253 | — | — | **does not work on the C3**, see below |
 
 Data transfer is never the bottleneck: a 4,000-byte frame takes **8 ms** at 4 MHz, and
 drawing a band (bitmap loops, text, rectangles) takes **~17 ms**.
@@ -88,6 +89,33 @@ Confirmed with stock Arduino GxEPD2 across four XIAO variants, same adapter and 
 Since known-good third-party code fails the same way, this is board-level and not a
 software problem. Use the C3. The `D` pin positions are identical across the XIAO family
 but the GPIOs behind them are not — see the pin table in `README.md`.
+
+### GDEY037T03 3.7" does not work on the XIAO ESP32-C3
+
+Confirmed with both `epdsi` and stock Arduino GxEPD2:
+
+| Board | Result |
+| :--- | :--- |
+| XIAO MG24 | works |
+| XIAO nRF52840 | works |
+| **XIAO ESP32-C3** | **panel never responds** |
+
+On the C3 the panel is demonstrably present and alive — BUSY is driven, not floating,
+and asserts correctly (active-LOW) in response to a hardware reset. But it never acts on
+SPI commands: `refresh` returns in 0 ms and the display never changes. Sweeping the SPI
+clock from 4 MHz down to 100 kHz changes nothing, so signal integrity on SCK is not the
+cause. Arduino failing the same way rules out the driver.
+
+Two untested candidates remain, both needing instrumentation to separate: power delivery
+(the UC8253's DC-DC booster sagging the C3's rail — the same failure mode as the EXT3-1
+J3 jumper problem), or something about this panel's FPC that the C3's pin assignment does
+not tolerate.
+
+Note also that the 3.7" is **not on Seeed's supported panel list** for this driver board.
+Their catalogue covers 1.54", 2.13", 2.9", 4.2", 4.26", 5.65", 5.83" and 7.5". This is an
+undocumented combination rather than a defect.
+
+The example is kept in the repository for use on a board that works.
 
 ### BUSY pull direction follows controller polarity
 

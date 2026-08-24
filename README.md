@@ -74,6 +74,7 @@ cargo run --release --example ssd1677_gdeq0426t82_epd   # 4.26" mono, differenti
 cargo run --release --example ssd1680_gdem0213b74_epd   # 2.13" mono, banded partial refresh
 cargo run --release --example jd79661_zjy122250_epd     # 2.13" quad-colour
 cargo run --release --example ssd1681_gdem0154z90_epd   # 1.54" tri-colour (~90 s, do not interrupt)
+cargo run --release --example uc8253_gdey037t03_epd     # 3.7" mono -- does NOT work on the C3, see BRINGUP.md
 
 # Diagnostics, for bringing up a new panel
 cargo run --release --example epd_diag4        # 4.26": fill black, then white
