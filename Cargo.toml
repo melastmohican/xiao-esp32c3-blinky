@@ -23,7 +23,7 @@ nb = "1.1"
 embedded-graphics = "0.8.1"
 embedded-hal = "1.0"
 embedded-hal-bus = "0.3"
-epdsi = "0.1.2"
+epdsi = "0.1.5"
 tinybmp = "0.6"
 format_no_std = "1.2.0"
 
@@ -40,8 +40,3 @@ incremental = false
 lto = 'fat'
 opt-level = 's'
 overflow-checks = false
-
-# Uncomment to build against a local epdsi checkout — useful for testing driver fixes
-# that are not published yet. Remove before pushing.
-#[patch.crates-io]
-#epdsi = { path = "../epdsi" }
