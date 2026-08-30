@@ -50,8 +50,8 @@
 #![no_main]
 
 use embedded_graphics::geometry::{Dimensions, Point, Size};
-use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
@@ -63,8 +63,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::Rate;
 use tinybmp::Bmp;
 
@@ -215,7 +215,10 @@ fn main() -> ! {
     // JD79661 BUSY is active-LOW: the line is pulled low while the panel is working.
     // Pull it up so a missing or unpowered panel reads "idle" rather than "busy
     // forever", which would otherwise present as a hang rather than a blank screen.
-    let busy = Input::new(peripherals.GPIO4, InputConfig::default().with_pull(Pull::Up));
+    let busy = Input::new(
+        peripherals.GPIO4,
+        InputConfig::default().with_pull(Pull::Up),
+    );
 
     let spi = Spi::new(
         peripherals.SPI2,

@@ -24,8 +24,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::{Instant, Rate};
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -98,7 +98,10 @@ fn main() -> ! {
             esp_println::println!("    refresh took {} ms  (expected ~4000 ms)", ms);
         }
 
-        esp_println::println!("    >>> LOOK AT THE PANEL: it should now be solid {}", label);
+        esp_println::println!(
+            "    >>> LOOK AT THE PANEL: it should now be solid {}",
+            label
+        );
         delay.delay_ms(6000);
     }
 

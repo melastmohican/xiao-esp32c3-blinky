@@ -70,8 +70,8 @@
 #![no_main]
 
 use embedded_graphics::geometry::{Point, Size};
-use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
@@ -83,8 +83,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::Rate;
 use tinybmp::Bmp;
 
@@ -240,7 +240,10 @@ fn main() -> ! {
     let rst = Output::new(peripherals.GPIO2, Level::High, OutputConfig::default());
     // UC8253 BUSY is active-LOW, unlike the SSD16xx panels: pull up so a missing or
     // unpowered panel reads "idle" rather than "busy forever".
-    let busy = Input::new(peripherals.GPIO4, InputConfig::default().with_pull(Pull::Up));
+    let busy = Input::new(
+        peripherals.GPIO4,
+        InputConfig::default().with_pull(Pull::Up),
+    );
 
     let spi = Spi::new(
         peripherals.SPI2,
@@ -271,12 +274,7 @@ fn main() -> ! {
 
     // Buffer coordinates map straight to the panel with the FPC ribbon at the bottom:
     // (0,0) is the top-left of the visible image. No rotation or mirroring needed.
-    let mut display = PageBuffer::new(
-        &mut bw_buf[..],
-        GDEY037T03::WIDTH,
-        GDEY037T03::HEIGHT,
-        0,
-    );
+    let mut display = PageBuffer::new(&mut bw_buf[..], GDEY037T03::WIDTH, GDEY037T03::HEIGHT, 0);
 
     esp_println::println!("--- Phase 1: Full Monochrome Refresh ---");
 

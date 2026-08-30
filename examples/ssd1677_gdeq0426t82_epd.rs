@@ -66,8 +66,8 @@
 #![no_main]
 
 use embedded_graphics::geometry::{Point, Size};
-use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
@@ -79,8 +79,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::Rate;
 use tinybmp::Bmp;
 
@@ -298,12 +298,7 @@ fn main() -> ! {
 
     // The buffer keeps the panel's native 800x480 RAM geometry; Rotate270 turns it into a
     // 480x800 portrait drawing surface with the FPC ribbon at the bottom.
-    let mut display = PageBuffer::new(
-        bw_buf,
-        GDEQ0426T82::WIDTH,
-        GDEQ0426T82::HEIGHT,
-        0,
-    );
+    let mut display = PageBuffer::new(bw_buf, GDEQ0426T82::WIDTH, GDEQ0426T82::HEIGHT, 0);
     display.set_rotation(DisplayRotation::Rotate270);
 
     esp_println::println!("--- Phase 1: Full Monochrome Refresh ---");

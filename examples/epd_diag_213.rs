@@ -25,8 +25,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::{Instant, Rate};
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -40,7 +40,12 @@ static mut BUF: [u8; FRAME_BYTES] = [0xFFu8; FRAME_BYTES];
 fn main() -> ! {
     let peripherals = esp_hal::init(esp_hal::Config::default());
     let mut delay = Delay::new();
-    delay.delay_ms(200);
+
+    // Startup hold, matching `epd_diag_352`. On the XIAO, power-up *is* program start, so the
+    // "flash, then power-cycle, then watch" ritual in BRINGUP.md needs a window to attach
+    // `espflash monitor` after the replug and before the panel is touched. Without it the only
+    // run you can observe is the one flashing produced, which by definition began dirty.
+    delay.delay_ms(8000);
 
     esp_println::println!("=== diag: GDEM0213B74 ===");
     esp_println::println!(
@@ -83,26 +88,24 @@ fn main() -> ! {
     // SAFETY: single-threaded, only reference taken.
     let buf: &'static mut [u8; FRAME_BYTES] = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
 
-    let show = |epd: &mut EpdDriver<_, _, GDEM0213B74>,
-                    delay: &mut Delay,
-                    label: &str,
-                    buf: &[u8]| {
-        epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
-            .unwrap();
-        epd.set_cursor(0, 0).unwrap();
-        epd.clear_frame(ColorChannel::RedYellow, 0xFF).unwrap();
+    let show =
+        |epd: &mut EpdDriver<_, _, GDEM0213B74>, delay: &mut Delay, label: &str, buf: &[u8]| {
+            epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
+                .unwrap();
+            epd.set_cursor(0, 0).unwrap();
+            epd.clear_frame(ColorChannel::RedYellow, 0xFF).unwrap();
 
-        epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
-            .unwrap();
-        epd.set_cursor(0, 0).unwrap();
-        epd.write_frame(ColorChannel::BlackWhite, buf).unwrap();
+            epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
+                .unwrap();
+            epd.set_cursor(0, 0).unwrap();
+            epd.write_frame(ColorChannel::BlackWhite, buf).unwrap();
 
-        let start = Instant::now();
-        epd.refresh(delay).unwrap();
-        let ms = start.elapsed().as_millis();
-        esp_println::println!("  {}: refresh {} ms  (expect ~2000-3000)", label, ms);
-        delay.delay_ms(4000);
-    };
+            let start = Instant::now();
+            epd.refresh(delay).unwrap();
+            let ms = start.elapsed().as_millis();
+            esp_println::println!("  {}: refresh {} ms  (expect ~2000-3000)", label, ms);
+            delay.delay_ms(4000);
+        };
 
     // 1. solid black
     esp_println::println!("--- solid BLACK ---");

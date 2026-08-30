@@ -1,22 +1,39 @@
-//! # GDEY037T03 diagnostic: is 4 MHz too fast on this board?
+//! # GDEY037T03 diagnostic: does this panel work on the C3, and if not, is the clock why?
 //!
 //! Established already: BUSY is driven (not floating) and responds to a hardware reset,
 //! so the panel is connected, powered and alive. Yet `refresh` returns in 0 ms and the
-//! display never changes — the panel is not acting on SPI commands. Stock Arduino
-//! GxEPD2 fails the same way on this board, so it is not a driver problem.
+//! display never changes.
 //!
-//! On the XIAO ESP32-C3, SCK lands on D8 = **GPIO8, an ESP32-C3 strapping pin** carrying
-//! a boot-time pull-up, and this is the largest-COG panel in the set. Four smaller
-//! panels work fine here at 4 MHz. GxEPD2 also defaults to 4 MHz — which would explain
-//! why Arduino fails identically.
+//! **Re-run this — the premise has changed.** That was previously read as "the panel is not
+//! acting on SPI commands", with stock Arduino GxEPD2 failing identically taken as proof it was
+//! not a driver problem. Then the 3.52" panel on this same board produced *the same 0 ms symptom*
+//! and it turned out to be three driver bugs, all of which reproduced only on the C3. "Refresh
+//! returns in 0 ms" means **BUSY was never observed asserted** — either polled too early, or the
+//! controller ignored the command — which is not the same as a panel ignoring SPI. GxEPD2's busy
+//! wait has the same race shape, so it failing too is weaker evidence than it looked.
 //!
-//! So: sweep the clock down and find out whether it ever starts working.
+//! `epdsi` now waits for the BUSY *edge* after `DISPLAY_REFRESH` on this variant. A run that still
+//! reports ~0 ms now means BUSY genuinely never asserted; a run reporting ~500 ms means the edge
+//! wait timed out, which says the same thing more explicitly. Either way the reading is sharper
+//! than before.
 //!
-//! Each step fills the panel BLACK. A refresh under 500 ms means the panel never
-//! started; anything longer means it did, and that rate works.
+//! The clock sweep is retained because it is still worth ruling out: on the XIAO ESP32-C3, SCK
+//! lands on D8 = **GPIO8, an ESP32-C3 strapping pin** carrying a boot-time pull-up, and this is
+//! the largest-COG panel in the set. Four smaller panels work fine here at 4 MHz.
+//!
+//! Each step fills the panel BLACK. A refresh under 500 ms means the panel never started;
+//! anything longer means it did, and that rate works. The sweep stops at the first rate that
+//! works, so a working panel is never refreshed repeatedly.
+//!
+//! ## Run — flash first, power-cycle second
+//!
+//! Power-up **is** program-start on this board, so replugging first runs the previous binary and
+//! flashing then interrupts it. See `BRINGUP.md`.
 //!
 //! ```bash
-//! cargo run --release --example epd_diag_370
+//! cargo run --release --example epd_diag_370   # flash. Ignore this run.
+//! # unplug USB, wait a few seconds, plug back in
+//! espflash monitor                             # attach during the startup hold
 //! ```
 
 #![no_std]
@@ -29,8 +46,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::{Instant, Rate};
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -48,6 +65,12 @@ fn main() -> ! {
 
     esp_println::println!("=== GDEY037T03: SPI clock sweep ===");
     esp_println::println!("BUSY is active-LOW on this panel. Watch the display, not just the log.");
+
+    // Hold before touching the panel so `espflash monitor` can be attached after a replug.
+    for remaining in (1..=8u32).rev() {
+        esp_println::println!("starting in {} s (attach monitor now)", remaining);
+        delay.delay_ms(1000);
+    }
 
     for khz in [4000u32, 1000, 500, 200, 100] {
         esp_println::println!("--- SPI @ {} kHz: fill BLACK ---", khz);

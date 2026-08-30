@@ -48,8 +48,8 @@
 #![no_main]
 
 use embedded_graphics::geometry::{Point, Size};
+use embedded_graphics::mono_font::ascii::{FONT_10X20, FONT_6X10};
 use embedded_graphics::mono_font::MonoTextStyle;
-use embedded_graphics::mono_font::ascii::{FONT_6X10, FONT_10X20};
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
@@ -61,8 +61,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::Rate;
 use tinybmp::Bmp;
 
@@ -235,21 +235,21 @@ fn main() -> ! {
 
         // Each RAM write starts from the window origin, so reset window + cursor first.
         esp_println::println!("Sending Black/White frame (4,000 bytes)...");
-            epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
+        epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
             .unwrap();
         epd.set_cursor(0, 0).unwrap();
         epd.write_frame(ColorChannel::BlackWhite, display.as_slice())
             .unwrap();
 
         esp_println::println!("Refreshing display hardware (Full refresh)...");
-            epd.refresh(&mut delay).unwrap();
+        epd.refresh(&mut delay).unwrap();
 
         // Seed the "previous image" RAM (0x26) with what is now physically on the panel,
         // so Phase 2's differential updates have a correct base to diff against.
         epd.set_window(0, 0, GDEM0213B74::WIDTH - 1, GDEM0213B74::HEIGHT - 1)
             .unwrap();
         epd.set_cursor(0, 0).unwrap();
-            epd.write_frame(ColorChannel::RedYellow, display.as_slice())
+        epd.write_frame(ColorChannel::RedYellow, display.as_slice())
             .unwrap();
     }
 
@@ -309,9 +309,8 @@ fn main() -> ! {
             .draw(&mut band)
             .unwrap();
 
-
         // Restrict controller RAM to the band, then write the new image to B/W RAM.
-            epd.set_window(0, BAND_Y, GDEM0213B74::WIDTH - 1, BAND_Y + BAND_H - 1)
+        epd.set_window(0, BAND_Y, GDEM0213B74::WIDTH - 1, BAND_Y + BAND_H - 1)
             .unwrap();
         epd.set_cursor(0, BAND_Y).unwrap();
         epd.write_frame(ColorChannel::BlackWhite, band.as_slice())
@@ -324,11 +323,11 @@ fn main() -> ! {
             count,
             if swapped { "swapped" } else { "normal" }
         );
-            epd.refresh(&mut delay).unwrap();
+        epd.refresh(&mut delay).unwrap();
 
         // Copy the band just displayed into the "previous image" RAM so the next
         // iteration diffs against what is actually on the panel.
-            epd.set_window(0, BAND_Y, GDEM0213B74::WIDTH - 1, BAND_Y + BAND_H - 1)
+        epd.set_window(0, BAND_Y, GDEM0213B74::WIDTH - 1, BAND_Y + BAND_H - 1)
             .unwrap();
         epd.set_cursor(0, BAND_Y).unwrap();
         epd.write_frame(ColorChannel::RedYellow, band.as_slice())
