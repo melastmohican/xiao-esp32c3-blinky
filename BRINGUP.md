@@ -54,8 +54,8 @@ panel state before suspecting code.
 | GDEM0213B74 2.13" mono | SSD1680 | ~3891 ms | ~1017 ms | banded partial, fast LUT |
 | ZJY122250 2.13" quad | JD79661 | several s | n/a | colour: no fast waveform |
 | GDEM0154Z90 1.54" tri | SSD1681 | **~14 s** | **~14 s** | see below |
-| GDEY037T03 3.7" mono | UC8253 | — | — | **does not work on the C3**; retested after the BUSY fixes, still fails |
-| SE0352N14 3.52" tri | UC8253 | — | n/a | **does not work on the C3.** ~17.3 s was measured here earlier and is no longer reproducible — see below |
+| GDEY037T03 3.7" mono | UC8253 | works | n/a (partial-window demo only) | works — on a replacement C3. The original C3 was faulty; see below |
+| SE0352N14 3.52" tri | UC8253 | ~17369 ms | n/a | works — on a replacement C3. The original C3 was faulty; see below |
 
 Data transfer is never the bottleneck: a 4,000-byte frame takes **8 ms** at 4 MHz, and
 drawing a band (bitmap loops, text, rectangles) takes **~17 ms**.
@@ -129,7 +129,13 @@ concluding anything about the C6:
 Note also that Seeed's compatibility list for this board covers SAMD21, RP2040, nRF52840, ESP32C3
 and ESP32S3 — the **C6 is not on it**.
 
-### GDEY037T03 3.7" does not work on the XIAO ESP32-C3
+### GDEY037T03 3.7" — history: believed not to work on the XIAO ESP32-C3
+
+**Resolved, like the 3.52" panel: it works.** Retested on the replacement C3 with the
+`uc8253_gdey037t03_epd` example — full refresh, six partial-window logo-swap updates, and
+a full-waveform cleanup pass, all confirmed correct on the panel. The original C3 was
+faulty; the failures documented below were never a controller or driver problem. Everything
+in this section describes debugging against that faulty board and is kept for the record.
 
 Confirmed with both `epdsi` and stock Arduino GxEPD2:
 
@@ -165,14 +171,9 @@ The 3.52" no longer distinguishes this panel either: **both UC8253 panels now fa
 with `epdsi` and with Waveshare's own reference demo. See the section below — this is one fault,
 not two, and it belongs to the controller rather than to the 3.7" specifically.
 
-**Stop changing driver code for this.** The panel works on XIAO MG24 and nRF52840 with the same
-`epdsi` build.
-
 Note also that the 3.7" is **not on Seeed's supported panel list** for this driver board.
-Their catalogue covers 1.54", 2.13", 2.9", 4.2", 4.26", 5.65", 5.83" and 7.5". This is an
-undocumented combination rather than a defect.
-
-The example is kept in the repository for use on a board that works.
+Their catalogue covers 1.54", 2.13", 2.9", 4.2", 4.26", 5.65", 5.83" and 7.5". It works
+anyway, on a sound C3.
 
 ### A refresh can return in 0 ms because BUSY has not asserted yet
 
@@ -209,7 +210,30 @@ There are two causes, and both had to be fixed:
   family, uses 30 ms. At 2 ms the reset latched only sometimes, and a reset that does not take
   leaves the controller ignoring everything. `epdsi` now uses 30 ms.
 
-### The UC8253 panels do not work on the C3, and it is not the driver
+### Resolved: the original C3 board was faulty, not the C3+UC8253 combo
+
+Everything below this point was measured on the original C3 and concluded the controller
+combination itself was broken. That conclusion was wrong. Reading 2, flagged below as
+"testable and untested," was the answer: **this particular C3 board had degraded.**
+
+A replacement XIAO ESP32-C3 was fitted and re-run through the same sequence recommended
+below:
+
+1. `epd_diag_213` on the known-good `GDEM0213B74` (2.13" mono) — 3892 ms, matching the
+   ~3891 ms reference exactly. New board is sound.
+2. `epd_diag_352` on `SE0352N14` (3.52" tri, UC8253), single-shot — **17369 ms, `OK`**,
+   matching the original ~17.3 s measurement almost exactly. Panel showed white | black |
+   red with "PLANE TEST" upright, as expected.
+3. `uc8253_gdey037t03_epd` on `GDEY037T03` (3.7" mono, UC8253) — full refresh, six
+   partial-window logo-swap updates, and a full-waveform cleanup pass, all confirmed
+   correct on the panel.
+
+So the UC8253 controller works fine on the C3, on both panels tested. The three `epdsi`
+driver fixes found while chasing this (missing per-refresh `POWER_ON`, BUSY-edge wait, 30 ms
+reset pulse) were real bugs worth having, and this board's failure obscured that they had
+already fixed it.
+
+### History: why "the UC8253 panels do not work on the C3" was believed
 
 Confirmed with two independent driver stacks against the same assembly — same ePaper Driver
 Board, same panel, same FPC seating, only the XIAO swapped in the socket:
@@ -252,6 +276,10 @@ Reading 2 is testable and untested: put a known-good panel (the 2.13" `GDEM0213B
 on this C3 and run `epd_diag_213`. If that also fails, the board is damaged and "the C3 cannot
 drive UC8253" is the wrong conclusion. Do this before buying another board. A second C3 would
 settle it outright.
+
+**Settled: reading 2 was correct.** See "Resolved" above — a replacement C3 drove both the
+known-good 2.13" and the SE0352N14 successfully, matching prior reference timings. The original
+board was damaged.
 
 **Open question, unresolved:** two of the C3's six pins are strapping pins — `GPIO2` (RST) and
 `GPIO8` (SCK) — which the ROM touches before firmware runs. MG24's `PC00`/`PA03` have no
@@ -321,6 +349,19 @@ different vendors carry the same `FPC-J002` ribbon and are physically identical.
 2.13" mono `GDEM0213B74` carries `FPC-7528B`.
 
 ## Toolchain
+
+### epdsi 0.1.7
+
+Bumped from 0.1.5 with no code changes — 0.1.6 only deprecated `EpdPanel::vcom()` /
+`custom_lut()` / `gate_voltage()` (unused here) and 0.1.7 adds SSD1677 RAM auto-fill,
+a hardware-pattern-generator clear path enabled by default. The sibling RP2350 repo
+confirmed the same: their bump was a version-string change only.
+
+RAM auto-fill was reverified on the replacement C3 with `epd_diag4` against the
+4.26" `GDEQ0426T82`: 3746 ms / 3747 ms for black then white, matching the ~3745 ms
+reference, panel confirmed visually. This is the one code path in 0.1.7 the epdsi
+changelog itself flags as having no vendor reference driver behind it, so it was
+worth a real re-check rather than trusting the build succeeding.
 
 `esp-hal` is pinned to exactly `=1.0.0`. `esp-bootloader-esp-idf` 0.4.0 declares **no**
 `esp-hal` dependency, so Cargo will happily resolve it alongside esp-hal 1.1.x, which

@@ -18,7 +18,8 @@ in the driver software, so these examples target the C3.
 - **Carrier:** ePaper Driver Board for XIAO, 24-pin FPC
 - **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480),
   GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250),
-  GDEM0154Z90 (1.54" tri-colour, 200x200)
+  GDEM0154Z90 (1.54" tri-colour, 200x200), SE0352N14 (3.52" tri-colour),
+  GDEY037T03 (3.7" mono)
 
 ### Pin mapping
 
@@ -74,12 +75,14 @@ cargo run --release --example ssd1677_gdeq0426t82_epd   # 4.26" mono, differenti
 cargo run --release --example ssd1680_gdem0213b74_epd   # 2.13" mono, banded partial refresh
 cargo run --release --example jd79661_zjy122250_epd     # 2.13" quad-colour
 cargo run --release --example ssd1681_gdem0154z90_epd   # 1.54" tri-colour (~90 s, do not interrupt)
-cargo run --release --example uc8253_gdey037t03_epd     # 3.7" mono -- does NOT work on the C3, see BRINGUP.md
+cargo run --release --example uc8253_gdey037t03_epd     # 3.7" mono, full + partial-window refresh
+cargo run --release --example uc8253_se0352n14_epd      # 3.52" tri-colour (~17 s/refresh, rated ~daily)
 
 # Diagnostics, for bringing up a new panel
 cargo run --release --example epd_diag4        # 4.26": fill black, then white
 cargo run --release --example epd_diag_213     # 2.13": fill black/white, then edge stripes
 cargo run --release --example epd_diag_partial # 2.13": full vs partial vs banded, timed
+cargo run --release --example epd_diag_352     # 3.52": single-shot refresh, do not loop
 ```
 
 See **[BRINGUP.md](BRINGUP.md)** for reference timings, diagnostics, and the hardware
