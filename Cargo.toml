@@ -23,7 +23,7 @@ nb = "1.1"
 embedded-graphics = "0.8.1"
 embedded-hal = "1.0"
 embedded-hal-bus = "0.3"
-epdsi = "0.1.7"
+epdsi = { version = "0.2", features = ["defmt"] }
 tinybmp = "0.6"
 format_no_std = "1.2.0"
 
