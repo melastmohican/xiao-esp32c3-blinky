@@ -121,8 +121,8 @@
 #![no_main]
 
 use embedded_graphics::geometry::{Point, Size};
-use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::mono_font::ascii::FONT_10X20;
+use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
@@ -134,8 +134,8 @@ use esp_backtrace as _;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
-use esp_hal::spi::Mode;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
+use esp_hal::spi::Mode;
 use esp_hal::time::{Instant, Rate};
 use tinybmp::Bmp;
 
