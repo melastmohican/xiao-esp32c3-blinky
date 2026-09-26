@@ -5,6 +5,8 @@ driving e-paper displays through the
 [ePaper Driver Board for XIAO](https://www.seeedstudio.com/ePaper-breakout-Board-for-XIAO-V2-p-6374.html)
 with the [`epdsi`](https://crates.io/crates/epdsi) driver framework.
 
+![XIAO ESP32-C3 connected to a ZJY122250 e-paper display via FPC](images/jd79661_zjy122250.jpg)
+
 ## Why the C3
 
 The XIAO ESP32-C6 does not work with this ePaper Driver Board — the stock Arduino
