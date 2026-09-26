@@ -23,6 +23,8 @@ in the driver software, so these examples target the C3.
   GDEM0154Z90 (1.54" tri-colour, 200x200), SE0352N14 (3.52" tri-colour),
   GDEY037T03 (3.7" mono)
 
+![XIAO ESP32-C3 connected to a GDEY0266T90 e-paper display via FPC](images/ssd1680_gdey0266t90.jpg)
+
 ### Pin mapping
 
 Fixed by the driver board; nothing to wire by hand.
