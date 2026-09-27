@@ -18,10 +18,11 @@ in the driver software, so these examples target the C3.
 
 - **Board:** Seeed Studio XIAO ESP32-C3 (`riscv32imc-unknown-none-elf`)
 - **Carrier:** ePaper Driver Board for XIAO, 24-pin FPC
-- **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480),
+- **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480, also 4-level grayscale),
   GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250),
   GDEM0154Z90 (1.54" tri-colour, 200x200), SE0352N14 (3.52" tri-colour),
-  GDEY037T03 (3.7" mono)
+  GDEY037T03 (3.7" mono), GDEY0266T90 (2.66" mono, 152x296, also 4-level grayscale),
+  GDEY0266Z90 (2.66" tri-colour, 152x296), GDEM0154F51H (1.54" quad-colour, 200x200)
 
 ![XIAO ESP32-C3 connected to a GDEY0266T90 e-paper display via FPC](images/ssd1680_gdey0266t90.jpg)
 
@@ -75,12 +76,20 @@ Upgrade both together or neither.
 cargo run --release
 
 # Panel demos
-cargo run --release --example ssd1677_gdeq0426t82_epd   # 4.26" mono, differential refresh
-cargo run --release --example ssd1680_gdem0213b74_epd   # 2.13" mono, banded partial refresh
-cargo run --release --example jd79661_zjy122250_epd     # 2.13" quad-colour
-cargo run --release --example ssd1681_gdem0154z90_epd   # 1.54" tri-colour (~90 s, do not interrupt)
-cargo run --release --example uc8253_gdey037t03_epd     # 3.7" mono, full + partial-window refresh
-cargo run --release --example uc8253_se0352n14_epd      # 3.52" tri-colour (~17 s/refresh, rated ~daily)
+cargo run --release --example ssd1677_gdeq0426t82_epd         # 4.26" mono, differential refresh
+cargo run --release --example ssd1677_gdeq0426t82_gray4_epd   # 4.26" 4-level grayscale
+cargo run --release --example ssd1680_gdem0213b74_epd         # 2.13" mono, banded partial refresh
+cargo run --release --example ssd1680_gdey0266t90_epd         # 2.66" mono, full + partial refresh
+cargo run --release --example ssd1680_gdey0266t90_gray4_epd   # 2.66" 4-level grayscale
+cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour, every refresh mode
+cargo run --release --example ssd1680_gdey0266z90_tri_epd     # 2.66" tri-colour, PageBufferPair API
+cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour
+cargo run --release --example jd79660_gdem0154f51h_epd        # 1.54" quad-colour
+cargo run --release --example ssd1681_gdem0154z90_epd         # 1.54" tri-colour (~90 s, do not interrupt)
+cargo run --release --example ssd1681_gdem0154z90_tri_epd     # 1.54" tri-colour, PageBufferPair API
+cargo run --release --example uc8253_gdey037t03_epd           # 3.7" mono, full + partial-window refresh
+cargo run --release --example uc8253_se0352n14_epd            # 3.52" tri-colour (~17 s/refresh, rated ~daily)
+cargo run --release --example uc8253_se0352n14_tri_epd        # 3.52" tri-colour, PageBufferPair API
 
 # Diagnostics, for bringing up a new panel
 cargo run --release --example epd_diag4        # 4.26": fill black, then white
