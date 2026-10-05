@@ -79,6 +79,7 @@ cargo run --release
 cargo run --release --example ssd1677_gdeq0426t82_epd         # 4.26" mono, differential refresh
 cargo run --release --example ssd1677_gdeq0426t82_gray4_epd   # 4.26" 4-level grayscale
 cargo run --release --example ssd1680_gdem0213b74_epd         # 2.13" mono, banded partial refresh
+cargo run --release --example ssd1680_gdem0213b74_gray4_epd   # 2.13" 4-level grayscale, 122x250
 cargo run --release --example ssd1680_gdey0266t90_epd         # 2.66" mono, full + partial refresh
 cargo run --release --example ssd1680_gdey0266t90_gray4_epd   # 2.66" 4-level grayscale
 cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour, every refresh mode
