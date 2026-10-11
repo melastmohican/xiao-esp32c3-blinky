@@ -86,6 +86,7 @@ cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour
 cargo run --release --example ssd1680_gdey0266z90_tri_epd     # 2.66" tri-colour, PageBufferPair API
 cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour
 cargo run --release --example jd79676_gdey0213f52_epd           # 2.13" quad-colour, JD79676A (F52 sticker, not F51)
+cargo run --release --example ist7163_gdem037f51_epd          # 3.7" quad-colour, IST7163 (needs epdsi 0.7.1, verified on XIAO ESP32-C3)
 cargo run --release --example jd79660_gdem0154f51h_epd        # 1.54" quad-colour
 cargo run --release --example ssd1681_gdem0154z90_epd         # 1.54" tri-colour (~90 s, do not interrupt)
 cargo run --release --example ssd1681_gdem0154z90_tri_epd     # 1.54" tri-colour, PageBufferPair API
