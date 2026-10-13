@@ -85,8 +85,8 @@ cargo run --release --example ssd1680_gdey0266t90_gray4_epd   # 2.66" 4-level gr
 cargo run --release --example ssd1685_gdey0266t90h_epd        # 2.66" mono 184x360, SSD1685 (needs epdsi 0.8.0, verified on XIAO ESP32-C3; Phase 4 FastFull measured 1678 ms against 1191 ms for Full, so it is slower on this panel)
 cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour, every refresh mode
 cargo run --release --example ssd1680_gdey0266z90_tri_epd     # 2.66" tri-colour, PageBufferPair API
-cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour
-cargo run --release --example jd79676_gdey0213f52_epd           # 2.13" quad-colour, JD79676A (F52 sticker, not F51)
+cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour; logs which panel it is (R70H), needs epdsi 0.8.1 or later
+cargo run --release --example jd79676_gdey0213f52_epd           # 2.13" quad-colour, JD79676A (F52 sticker, not F51); logs which panel it is (R70H); phase 2 uses `Jd7966xRefreshMode::Fast`, needs epdsi 0.8.1 or later
 cargo run --release --example ist7163_gdem037f51_epd          # 3.7" quad-colour, IST7163 (needs epdsi 0.7.1, verified on XIAO ESP32-C3)
 cargo run --release --example jd79660_gdem0154f51h_epd        # 1.54" quad-colour
 cargo run --release --example ssd1681_gdem0154z90_epd         # 1.54" tri-colour (~90 s, do not interrupt)
@@ -100,6 +100,8 @@ cargo run --release --example epd_diag4        # 4.26": fill black, then white
 cargo run --release --example epd_diag_213     # 2.13": fill black/white, then edge stripes
 cargo run --release --example epd_diag_partial # 2.13": full vs partial vs banded, timed
 cargo run --release --example epd_diag_352     # 3.52": single-shot refresh, do not loop
+cargo run --release --example epd_diag_jd7966x_rev # 2.13" quad-colour: read R70H to tell the panel families apart (never refreshes)
+cargo run --release --example epd_diag_jd79676_fast # GDEY0213F52 only: vendor fast init vs full init, times both refreshes (two refreshes per run)
 ```
 
 See **[BRINGUP.md](BRINGUP.md)** for reference timings, diagnostics, and the hardware

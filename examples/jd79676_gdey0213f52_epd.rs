@@ -10,7 +10,26 @@
 //!
 //! Draws a header, a four-swatch colour bar exercising all four inks, the Ferris and
 //! Rust logos, and footer labels, then does a single full refresh and powers the panel
-//! down. Quad-colour panels have no fast waveform, so expect several seconds.
+//! down. `epdsi` runs the full waveform only (about 16 s on this panel), so expect several
+//! seconds. See `epd_diag_jd79676_fast` for the vendor's fast init.
+//!
+//! ## Phases
+//!
+//! 0. **Panel check**: resets the panel and reads its `R70H` revision register over a bit-banged
+//!    3-wire bus, before SPI takes SCK and MOSI, then logs which unit it is. Seen so far:
+//!    `09 02 01` (Seeed `0213SW-F52-B2`), `89 02 01` (Good Display `GDEY0213F52`) and
+//!    `09 01 01` (Adafruit `ZJY122250`, which wants `jd79661_zjy122250_epd` instead). It never
+//!    powers on or refreshes the panel, and the example carries on whatever it reads.
+//!    Hardware-verified on a XIAO ESP32-C3 (12 Oct 2026) with a Good Display unit (`89 02 01`)
+//!    and a Seeed unit (`09 02 01`). An Adafruit unit run through this example on purpose was
+//!    flagged by the check and still drew, in 20.4 s with no gain from Fast (20.5 s).
+//! 1. **Phase 1**: full refresh, timed.
+//! 2. **Phase 2**: the same frame with the footer relabelled, refreshed with
+//!    `Jd7966xRefreshMode::Fast` (Good Display's `EPD_init_Fast()`) and timed against Phase 1.
+//!    Needs `epdsi` 0.8.1 or later. A raw-command probe of the same sequence on a
+//!    XIAO ESP32-C3 measured 15.9 s for Full and 10.9 s for Fast on two units, with clean colours
+//!    (12 Oct 2026). This example itself, run on a Good Display unit (lot `N5B3S02`, `R70H` =
+//!    `89 02 01`) on the same board, measured 15921 ms for Full and 10950 ms for Fast.
 //!
 //! ## Panel identification
 //!
@@ -61,11 +80,11 @@ use embedded_hal_bus::spi::ExclusiveDevice;
 use epdsi::prelude::*;
 use esp_backtrace as _;
 use esp_hal::delay::Delay;
-use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
+use esp_hal::gpio::{Flex, Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
 use esp_hal::spi::Mode;
-use esp_hal::time::Rate;
+use esp_hal::time::{Instant, Rate};
 use tinybmp::Bmp;
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -199,13 +218,108 @@ impl<'a> Dimensions for QuadColorBuffer<'a> {
 /// `0x55` is white repeated across all four 2-bit pixels in the byte.
 static mut FRAME_BUF: [u8; 8000] = [0x55u8; 8000];
 
+/// The bidirectional data line for the pre-flight revision read, as a `Flex` pin that
+/// `Spi3Bus` can turn around per byte. It borrows GPIO10 only until the read is done.
+struct SdaPin<'d>(Flex<'d>);
+
+impl DynamicPin for SdaPin<'_> {
+    type Error = core::convert::Infallible;
+
+    fn set_as_output(&mut self) -> Result<(), Self::Error> {
+        self.0.apply_output_config(&OutputConfig::default());
+        self.0.set_output_enable(true);
+        self.0.set_input_enable(false);
+        Ok(())
+    }
+
+    fn set_as_input(&mut self) -> Result<(), Self::Error> {
+        self.0.set_output_enable(false);
+        self.0
+            .apply_input_config(&InputConfig::default().with_pull(Pull::None));
+        self.0.set_input_enable(true);
+        Ok(())
+    }
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        self.0.set_high();
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        self.0.set_low();
+        Ok(())
+    }
+
+    fn is_high(&mut self) -> Result<bool, Self::Error> {
+        Ok(self.0.is_high())
+    }
+}
+
+/// Says which rear-sticker family a `R70H` reading belongs to, from the units seen so far.
+fn describe_revision(rev: [u8; 3]) -> &'static str {
+    match rev {
+        [0x09, 0x02, 0x01] => "matches the JD79676AA datasheet (Seeed 0213SW-F52-B2, lot NRA2L21)",
+        [0x89, 0x02, 0x01] => "matches the Good Display GDEY0213F52 unit seen (lot N5B3S02)",
+        [0x09, 0x01, 0x01] => {
+            "Adafruit ZJY122250 unit: this example is for the F52, use jd79661_zjy122250_epd"
+        }
+        [0x03, 0x02, 0x01] => {
+            "matches the JD79661AA datasheet: an F51-family part, use jd79661_zjy122250_epd"
+        }
+        [0xFF, 0xFF, 0xFF] | [0x00, 0x00, 0x00] => "read path not reaching the IC, no answer",
+        _ => "new pattern, record it with the rear sticker text and lot",
+    }
+}
+
 #[main]
 fn main() -> ! {
-    let peripherals = esp_hal::init(esp_hal::Config::default());
+    let mut peripherals = esp_hal::init(esp_hal::Config::default());
     let mut delay = Delay::new();
     delay.delay_ms(100);
 
     esp_println::println!("Starting GDEY0213F52 2.13\" Quad-Color EPD example (epdsi JD79676)");
+
+    // --- Which panel is this? Read R70H before SPI2 takes SCK and MOSI. ---
+    // Reset with the demo's timings, bit-bang the register read on reborrowed pins, then let
+    // them go. Nothing is powered on or refreshed here.
+    {
+        let id_cs = Output::new(
+            peripherals.GPIO3.reborrow(),
+            Level::High,
+            OutputConfig::default(),
+        );
+        let id_dc = Output::new(
+            peripherals.GPIO5.reborrow(),
+            Level::Low,
+            OutputConfig::default(),
+        );
+        let mut id_rst = Output::new(
+            peripherals.GPIO2.reborrow(),
+            Level::High,
+            OutputConfig::default(),
+        );
+        let id_sck = Output::new(
+            peripherals.GPIO8.reborrow(),
+            Level::Low,
+            OutputConfig::default(),
+        );
+        let id_busy = Input::new(
+            peripherals.GPIO4.reborrow(),
+            InputConfig::default().with_pull(Pull::Up),
+        );
+        let id_sda = SdaPin(Flex::new(peripherals.GPIO10.reborrow()));
+
+        delay.delay_ms(20);
+        id_rst.set_low();
+        delay.delay_ms(40);
+        id_rst.set_high();
+        delay.delay_ms(50);
+
+        let mut id_bus = Spi3Bus::new(id_cs, id_sck, id_sda, id_dc, id_rst, id_busy);
+        id_bus.wait_busy(&mut delay).unwrap();
+        let rev = id_bus.read_jd7966x_revision(&mut delay).unwrap();
+        esp_println::println!("Panel R70H = {:02X?}: {}", rev, describe_revision(rev));
+    }
 
     // Pin assignments are fixed by the ePaper Driver Board for XIAO.
     let cs = Output::new(peripherals.GPIO3, Level::High, OutputConfig::default());
@@ -303,10 +417,36 @@ fn main() -> ! {
     epd.write_frame(ColorChannel::BlackWhite, display.as_slice())
         .unwrap();
 
-    esp_println::println!("Triggering display refresh (no fast waveform on colour panels)...");
+    esp_println::println!("Triggering display refresh (full waveform, several seconds)...");
+    let start = Instant::now();
     epd.refresh(&mut delay).unwrap();
+    let full_ms = start.elapsed().as_millis();
+    esp_println::println!("Phase 1 Full: {} ms", full_ms);
 
     esp_println::println!("Powering off DC/DC...");
+    epd.sleep(&mut delay).unwrap();
+
+    // --- Phase 2: Jd7966xRefreshMode::Fast, the vendor demo's `EPD_init_Fast()`. ---
+    // The mode is read by `init`, so it takes effect on the next init after the sleep above.
+    // The footer is relabelled so the second frame can be told apart from the first.
+    delay.delay_ms(3000);
+    display.fill_rect(1, 198, 120, 50, QuadColor::White);
+    Text::new("Fast init", Point::new(16, 220), text_style)
+        .draw(&mut display)
+        .unwrap();
+    Text::new("epdsi BWRY", Point::new(11, 240), text_style)
+        .draw(&mut display)
+        .unwrap();
+
+    epd.controller_mut()
+        .set_refresh_mode(Jd7966xRefreshMode::Fast);
+    epd.init(&mut delay).unwrap();
+    epd.write_frame(ColorChannel::BlackWhite, display.as_slice())
+        .unwrap();
+    let start = Instant::now();
+    epd.refresh(&mut delay).unwrap();
+    let fast_ms = start.elapsed().as_millis();
+    esp_println::println!("Phase 2 Fast: {} ms (Full was {} ms)", fast_ms, full_ms);
     epd.sleep(&mut delay).unwrap();
 
     esp_println::println!("JD79676 QuadColor epdsi demo finished successfully!");

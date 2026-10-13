@@ -12,12 +12,25 @@
 //! Rust logos, and footer labels, then does a single full refresh and powers the panel
 //! down. Quad-colour panels have no fast waveform, so expect several seconds.
 //!
+//! ## Panel check
+//!
+//! Before the refresh the example resets the panel and reads its `R70H` revision register over
+//! a bit-banged 3-wire bus, before SPI takes SCK and MOSI, then logs which unit it is. Seen so
+//! far: `09 01 01` (Adafruit `ZJY122250`, this example), `09 02 01` and `89 02 01` (the
+//! `0213SW-F52-B2` F52 units, which want `jd79676_gdey0213f52_epd`). It never powers on or
+//! refreshes the panel, and the example carries on whatever it reads.
+//!
+//! **Hardware-verified on a XIAO ESP32-C3** (12 Oct 2026) with the Adafruit unit (sticker
+//! `ZJY122250-0213EAH-E5`): `R70H` read `09 01 01` and the refresh completed. Needs `epdsi`
+//! 0.8.1 or later for the revision read.
+//!
 //! ## Panel identification
 //!
-//! This same panel ships under several part numbers with different stickers: Good
-//! Display `GDEY0213F51`, Seeed Studio 5779, Adafruit 6373 / 6366. Units from different
-//! vendors are physically identical and carry an `FPC-J002` flex ribbon — the ribbon
-//! stamp identifies the panel where the retail labelling does not.
+//! This panel ships as Good Display `GDEY0213F51` and Adafruit 6373 / 6366 (sticker
+//! `ZJY122250-0213...-E5`). The Seeed Studio 5779 is not the same panel: its sticker is
+//! `0213SW-F52-B2`, the Good Display `GDEY0213F52` with a JD79676AA. All of them carry
+//! an `FPC-J002` flex ribbon, so the ribbon does not tell the families apart. Check the
+//! rear sticker, or run `epd_diag_jd7966x_rev`.
 //!
 //! ## Hardware
 //!
@@ -61,7 +74,7 @@ use embedded_hal_bus::spi::ExclusiveDevice;
 use epdsi::prelude::*;
 use esp_backtrace as _;
 use esp_hal::delay::Delay;
-use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
+use esp_hal::gpio::{Flex, Input, InputConfig, Level, Output, OutputConfig, Pull};
 use esp_hal::main;
 use esp_hal::spi::master::{Config as SpiConfig, Spi};
 use esp_hal::spi::Mode;
@@ -199,13 +212,107 @@ impl<'a> Dimensions for QuadColorBuffer<'a> {
 /// `0x55` is white repeated across all four 2-bit pixels in the byte.
 static mut FRAME_BUF: [u8; 8000] = [0x55u8; 8000];
 
+/// The bidirectional data line for the pre-flight revision read, as a `Flex` pin that
+/// `Spi3Bus` can turn around per byte. It borrows GPIO10 only until the read is done.
+struct SdaPin<'d>(Flex<'d>);
+
+impl DynamicPin for SdaPin<'_> {
+    type Error = core::convert::Infallible;
+
+    fn set_as_output(&mut self) -> Result<(), Self::Error> {
+        self.0.apply_output_config(&OutputConfig::default());
+        self.0.set_output_enable(true);
+        self.0.set_input_enable(false);
+        Ok(())
+    }
+
+    fn set_as_input(&mut self) -> Result<(), Self::Error> {
+        self.0.set_output_enable(false);
+        self.0
+            .apply_input_config(&InputConfig::default().with_pull(Pull::None));
+        self.0.set_input_enable(true);
+        Ok(())
+    }
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        self.0.set_high();
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        self.0.set_low();
+        Ok(())
+    }
+
+    fn is_high(&mut self) -> Result<bool, Self::Error> {
+        Ok(self.0.is_high())
+    }
+}
+
+/// Says which rear-sticker family a `R70H` reading belongs to, from the units seen so far.
+fn describe_revision(rev: [u8; 3]) -> &'static str {
+    match rev {
+        [0x09, 0x01, 0x01] => {
+            "matches the Adafruit ZJY122250 unit seen (sticker ZJY122250-0213EAH-E5)"
+        }
+        [0x03, 0x02, 0x01] => "matches the JD79661AA datasheet (not seen on a unit before)",
+        [0x09, 0x02, 0x01] | [0x89, 0x02, 0x01] => {
+            "F52 unit (0213SW-F52-B2): this example is for the F51, use jd79676_gdey0213f52_epd"
+        }
+        [0xFF, 0xFF, 0xFF] | [0x00, 0x00, 0x00] => "read path not reaching the IC, no answer",
+        _ => "new pattern, record it with the rear sticker text and lot",
+    }
+}
+
 #[main]
 fn main() -> ! {
-    let peripherals = esp_hal::init(esp_hal::Config::default());
+    let mut peripherals = esp_hal::init(esp_hal::Config::default());
     let mut delay = Delay::new();
     delay.delay_ms(100);
 
     esp_println::println!("Starting ZJY122250 2.13\" Quad-Color EPD example (epdsi JD79661)");
+
+    // --- Which panel is this? Read R70H before SPI2 takes SCK and MOSI. ---
+    // Reset with the demo's timings, bit-bang the register read on reborrowed pins, then let
+    // them go. Nothing is powered on or refreshed here.
+    {
+        let id_cs = Output::new(
+            peripherals.GPIO3.reborrow(),
+            Level::High,
+            OutputConfig::default(),
+        );
+        let id_dc = Output::new(
+            peripherals.GPIO5.reborrow(),
+            Level::Low,
+            OutputConfig::default(),
+        );
+        let mut id_rst = Output::new(
+            peripherals.GPIO2.reborrow(),
+            Level::High,
+            OutputConfig::default(),
+        );
+        let id_sck = Output::new(
+            peripherals.GPIO8.reborrow(),
+            Level::Low,
+            OutputConfig::default(),
+        );
+        let id_busy = Input::new(
+            peripherals.GPIO4.reborrow(),
+            InputConfig::default().with_pull(Pull::Up),
+        );
+        let id_sda = SdaPin(Flex::new(peripherals.GPIO10.reborrow()));
+
+        delay.delay_ms(20);
+        id_rst.set_low();
+        delay.delay_ms(40);
+        id_rst.set_high();
+        delay.delay_ms(50);
+
+        let mut id_bus = Spi3Bus::new(id_cs, id_sck, id_sda, id_dc, id_rst, id_busy);
+        id_bus.wait_busy(&mut delay).unwrap();
+        let rev = id_bus.read_jd7966x_revision(&mut delay).unwrap();
+        esp_println::println!("Panel R70H = {:02X?}: {}", rev, describe_revision(rev));
+    }
 
     // Pin assignments are fixed by the ePaper Driver Board for XIAO.
     let cs = Output::new(peripherals.GPIO3, Level::High, OutputConfig::default());
