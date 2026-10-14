@@ -287,8 +287,39 @@ fn main() -> ! {
     epd.write_frame(ColorChannel::BlackWhite, display.as_slice())
         .unwrap();
 
+    // DIAGNOSTIC (2g stuck-BUSY, 14 Oct 2026): UC8253 BUSY is active-low, so `false` is busy.
+    // Print the level before the refresh, and on a Timeout print it again and retry once.
+    let busy_before = epd.bus_mut().busy_is_high().unwrap();
+    esp_println::println!(
+        "BUSY before refresh: {}",
+        if busy_before {
+            "high (idle)"
+        } else {
+            "LOW (busy)"
+        }
+    );
     esp_println::println!("Refreshing display hardware (Full refresh)...");
-    epd.refresh(&mut delay).unwrap();
+    if let Err(e) = epd.refresh(&mut delay) {
+        let busy_after = epd.bus_mut().busy_is_high().unwrap();
+        esp_println::println!(
+            "Refresh failed: {:?}. BUSY now: {}",
+            e,
+            if busy_after {
+                "high (idle)"
+            } else {
+                "LOW (busy)"
+            }
+        );
+        delay.delay_ms(2000);
+        esp_println::println!("Retrying refresh once...");
+        match epd.refresh(&mut delay) {
+            Ok(()) => esp_println::println!("Retry succeeded: transient stall"),
+            Err(e2) => {
+                esp_println::println!("Retry also failed: {:?}", e2);
+                panic!("UC8253 refresh failed twice");
+            }
+        }
+    }
 
     // Sync the old plane with what is now on the panel.
     epd.set_window(0, 0, GDEY037T03::WIDTH - 1, GDEY037T03::HEIGHT - 1)
