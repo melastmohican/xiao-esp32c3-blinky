@@ -18,7 +18,7 @@ in the driver software, so these examples target the C3.
 
 - **Board:** Seeed Studio XIAO ESP32-C3 (`riscv32imc-unknown-none-elf`)
 - **Carrier:** ePaper Driver Board for XIAO, 24-pin FPC
-- **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480, also 4-level grayscale),
+- **Displays verified:** Good Display GDEQ0426T82 (4.26" mono, 800x480, also 4-level grayscale and MacPaint demo),
   GDEM0213B74 (2.13" mono, 122x250), ZJY122250-0213AJH-E5 (2.13" quad-colour, 122x250),
   GDEM0154Z90 (1.54" tri-colour, 200x200), SE0352N14 (3.52" tri-colour),
   GDEY037T03 (3.7" mono), GDEY0266T90 (2.66" mono, 152x296, also 4-level grayscale),
@@ -78,6 +78,7 @@ cargo run --release
 # Panel demos
 cargo run --release --example ssd1677_gdeq0426t82_epd         # 4.26" mono, differential refresh
 cargo run --release --example ssd1677_gdeq0426t82_gray4_epd   # 4.26" 4-level grayscale
+cargo run --release --example ssd1677_gdeq0426t82_macpaint    # 4.26" mono, MacPaint canvas and fast partial cursive animation
 cargo run --release --example ssd1680_gdem0213b74_epd         # 2.13" mono, banded partial refresh
 cargo run --release --example ssd1680_gdem0213b74_gray4_epd   # 2.13" 4-level grayscale, 122x250
 cargo run --release --example ssd1680_gdey0266t90_epd         # 2.66" mono, full + partial refresh
