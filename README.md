@@ -95,6 +95,7 @@ cargo run --release --example ssd1681_gdem0154z90_epd         # 1.54" tri-colour
 cargo run --release --example ssd1681_gdem0154z90_tri_epd     # 1.54" tri-colour, PageBufferPair API
 cargo run --release --example uc8253_gdey037t03_epd           # 3.7" mono, full + partial-window refresh
 cargo run --release --example uc8151d_gdew0215t12_epd         # 2.15" mono 112x208, UC8151D (needs epdsi 0.9.1; 4 screens, about 20 s: full, whole-frame partial, windowed partial x2; verified on XIAO ESP32-C3)
+cargo run --release --example uc8175_gdew0102i4fc_epd         # 1.02" mono 80x128, UC8175 (needs the unreleased epdsi patch; wired by hand to a DESPI-C102, same D pins; 2 full refreshes, about 15 s; verified on XIAO ESP32-C3)
 cargo run --release --example uc8253_se0352n14_epd            # 3.52" tri-colour (~17 s/refresh, rated ~daily)
 cargo run --release --example uc8253_se0352n14_tri_epd        # 3.52" tri-colour, PageBufferPair API
 
