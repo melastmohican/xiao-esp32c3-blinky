@@ -9,8 +9,8 @@
 //! renders wrongly. This is not the `GDEY042T81-FL02` front-light variant.
 //!
 //! **Hardware-verified on the XIAO ESP32-C3** (5 Nov 2026): Full 1585 ms, Partial 411 ms, FastFull
-//! 1666 ms, identical to the Pico 2 runs, so `FastFull` is slower than `Full` on this panel. Needs an
-//! `epdsi` release newer than 0.10.0 for the variant. Register sequences follow Good Display's `AU-GDEY042T81-FP4G-20240801` demo and
+//! 1666 ms, identical to the Pico 2 runs, so `FastFull` is slower than `Full` on this panel. Needs
+//! `epdsi` 0.10.1 or later for the variant. Register sequences follow Good Display's `AU-GDEY042T81-FP4G-20240801` demo and
 //! the SSD1683 datasheet; see the `GDEY042T81` panel doc in `epdsi` for the deliberate departures.
 //!
 //! Demonstrates:
