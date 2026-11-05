@@ -84,6 +84,8 @@ cargo run --release --example ssd1680_gdem0213b74_gray4_epd   # 2.13" 4-level gr
 cargo run --release --example ssd1680_gdey0266t90_epd         # 2.66" mono, full + partial refresh
 cargo run --release --example ssd1680_gdey0266t90_gray4_epd   # 2.66" 4-level grayscale
 cargo run --release --example ssd1685_gdey0266t90h_epd        # 2.66" mono 184x360, SSD1685 (needs epdsi 0.8.0, verified on XIAO ESP32-C3; Phase 4 FastFull measured 1678 ms against 1191 ms for Full, so it is slower on this panel)
+cargo run --release --example ssd1683_gdey042t81_epd        # 4.2" mono 400x300, SSD1683 (needs an epdsi release after 0.10.0, verified on XIAO ESP32-C3: Full 1585 ms, Partial 411 ms, FastFull 1666 ms, so FastFull is slower)
+cargo run --release --example ssd1683_gdey042t81_gray4_epd   # 4.2" 4-level grayscale on the SSD1683's built-in waveform (Gray4Otp), verified on XIAO ESP32-C3
 cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour, every refresh mode
 cargo run --release --example ssd1680_gdey0266z90_tri_epd     # 2.66" tri-colour, PageBufferPair API
 cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour; logs which panel it is (R70H), needs epdsi 0.8.1 or later
