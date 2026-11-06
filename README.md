@@ -101,18 +101,6 @@ cargo run --release --example uc8151d_gdew0215t12_epd         # 2.15" mono 112x2
 cargo run --release --example uc8175_gdew0102i4fc_epd         # 1.02" mono 80x128, UC8175 (needs the unreleased epdsi patch; wired by hand to a DESPI-C102, same D pins; 2 full refreshes, about 15 s; verified on XIAO ESP32-C3)
 cargo run --release --example uc8253_se0352n14_epd            # 3.52" tri-colour (~17 s/refresh, rated ~daily)
 cargo run --release --example uc8253_se0352n14_tri_epd        # 3.52" tri-colour, PageBufferPair API
-
-# Diagnostics, for bringing up a new panel
-cargo run --release --example epd_diag4        # 4.26": fill black, then white
-cargo run --release --example epd_diag_213     # 2.13": fill black/white, then edge stripes
-cargo run --release --example epd_diag_partial # 2.13": full vs partial vs banded, timed
-cargo run --release --example epd_diag_352     # 3.52": single-shot refresh, do not loop
-cargo run --release --example epd_diag_jd7966x_rev # 2.13" quad-colour: read R70H to tell the panel families apart (never refreshes)
-cargo run --release --example epd_diag_jd79676_fast # GDEY0213F52 only: vendor fast init vs full init, times both refreshes (two refreshes per run)
-cargo run --release --example epd_diag_029_f52   # 2.9" 4-color: GDEY029F52 init (128x296, JD79661), one refresh; pair with the next to identify a panel
-cargo run --release --example epd_diag_029_f51h  # 2.9" 4-color: GDEY029F51H init (168x384, JD79667), one refresh
-cargo run --release --example epd_diag_029_f52_psr8f # GDEY029F52 with PSR 8F 29 (the epdsi Jd79661 byte), one refresh
-cargo run --release --example epd_diag_029_f52_psr4f # GDEY029F52 with PSR 4F 29 (RES=01, 128x296), one refresh
 ```
 
 See **[BRINGUP.md](BRINGUP.md)** for reference timings, diagnostics, and the hardware
@@ -124,9 +112,10 @@ findings behind these examples.
 conclusions.** E-paper retains whatever was last written, and a run cut short mid-write
 leaves the panel in a state that makes the *next* run look broken — shifted content,
 refreshes that return instantly, or refreshes that appear to hang. Several apparent
-driver bugs during bring-up here turned out to be exactly that. The diagnostics above
-exist to establish a clean baseline: `epd_diag_213` proves the data path and geometry,
-`epd_diag_partial` times full against partial refresh.
+driver bugs during bring-up here turned out to be exactly that. The bring-up
+diagnostics live on the `diagnostics` branch, not on `main`. They establish a clean baseline:
+`epd_diag_213` proves the data path and geometry, `epd_diag_partial` times full against
+partial refresh.
 
 Reference timings for the 4.26" and 2.13" mono panels: full refresh ≈3.9 s, partial
 refresh ≈1.0 s, and moving a 4,000-byte frame over SPI at 4 MHz ≈8 ms.

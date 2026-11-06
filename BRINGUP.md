@@ -75,6 +75,9 @@ only exists for monochrome, so it is slow *and* discards the colour plane.
 
 Run these before changing any code. They establish whether the fault is real.
 
+The `epd_diag_*` examples below live on the `diagnostics` branch, not on `main`. Run
+`git checkout diagnostics` to use them.
+
 ```bash
 cargo run --release --example epd_diag_213     # 2.13": black, white, then edge stripes
 cargo run --release --example epd_diag4        # 4.26": black, then white
