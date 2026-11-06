@@ -89,6 +89,7 @@ cargo run --release --example ssd1683_gdey042t81_gray4_epd   # 4.2" 4-level gray
 cargo run --release --example ssd1680_gdey0266z90_epd         # 2.66" tri-colour, every refresh mode
 cargo run --release --example ssd1680_gdey0266z90_tri_epd     # 2.66" tri-colour, PageBufferPair API
 cargo run --release --example jd79661_zjy122250_epd           # 2.13" quad-colour; logs which panel it is (R70H), needs epdsi 0.8.1 or later
+cargo run --release --example jd79661_gdey029f52_epd           # 2.9" quad-colour GDEY029F52 (sticker 029SW-F52-B2): geometry page, then the usual logo page, two refreshes per run; needs epdsi 0.10.2 or later
 cargo run --release --example jd79676_gdey0213f52_epd           # 2.13" quad-colour, JD79676A (F52 sticker, not F51); logs which panel it is (R70H); phase 2 uses `Jd7966xRefreshMode::Fast`, needs epdsi 0.8.1 or later
 cargo run --release --example ist7163_gdem037f51_epd          # 3.7" quad-colour, IST7163 (needs epdsi 0.7.1, verified on XIAO ESP32-C3)
 cargo run --release --example jd79660_gdem0154f51h_epd        # 1.54" quad-colour
@@ -108,6 +109,10 @@ cargo run --release --example epd_diag_partial # 2.13": full vs partial vs bande
 cargo run --release --example epd_diag_352     # 3.52": single-shot refresh, do not loop
 cargo run --release --example epd_diag_jd7966x_rev # 2.13" quad-colour: read R70H to tell the panel families apart (never refreshes)
 cargo run --release --example epd_diag_jd79676_fast # GDEY0213F52 only: vendor fast init vs full init, times both refreshes (two refreshes per run)
+cargo run --release --example epd_diag_029_f52   # 2.9" 4-color: GDEY029F52 init (128x296, JD79661), one refresh; pair with the next to identify a panel
+cargo run --release --example epd_diag_029_f51h  # 2.9" 4-color: GDEY029F51H init (168x384, JD79667), one refresh
+cargo run --release --example epd_diag_029_f52_psr8f # GDEY029F52 with PSR 8F 29 (the epdsi Jd79661 byte), one refresh
+cargo run --release --example epd_diag_029_f52_psr4f # GDEY029F52 with PSR 4F 29 (RES=01, 128x296), one refresh
 ```
 
 See **[BRINGUP.md](BRINGUP.md)** for reference timings, diagnostics, and the hardware

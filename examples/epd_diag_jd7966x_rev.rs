@@ -8,6 +8,7 @@
 //! | `09 02 01` | Seeed 5779, sticker `0213SW-F52-B2` lot `NRA2L21` | JD79676AA datasheet value |
 //! | `89 02 01` | Good Display `GDEY0213F52`, sticker `0213SW-F52-B2` lot `N5B3S02` | top bit set, not in the datasheet |
 //! | `09 01 01` | Adafruit, sticker `ZJY122250-0213EAH-E5` | not in either datasheet |
+//! | `83 02 01` | 2.9" `GDEY029F52`, sticker `029SW-F52-B2` lot `N2B3F02` | top bit set, `03 02 01` underneath |
 //!
 //! The JD79661AA datasheet (V1.0.4, section 8.2.22) lists `03 02 01`. No unit has returned
 //! it yet, so a match on that value would be new information.
